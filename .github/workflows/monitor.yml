@@ -2,7 +2,7 @@ name: GBP Exchange Rate Monitor
 
 on:
   schedule:
-    - cron: "*/10 * * * 1-5"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
   push:
     branches: [main]
