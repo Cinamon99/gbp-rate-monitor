@@ -40,7 +40,6 @@ jobs:
         env:
           THRESHOLD_PRICE: ${{ secrets.THRESHOLD_PRICE }}
           BARK_DEVICE_KEY: ${{ secrets.BARK_DEVICE_KEY }}
-          BARK_URL: ${{ https://api.day.app }}
           PUSHDEER_KEY: ${{ secrets.PUSHDEER_KEY }}
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
