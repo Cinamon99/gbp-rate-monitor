@@ -184,26 +184,43 @@ def add_event_to_calendar(cal, rate_info, threshold):
 
 def send_bark(rate_info, threshold, bark_url, bark_device_key):
     if not bark_device_key:
+        print("Bark未配置，跳过推送")
         return False
+
     try:
         title = "💰 英镑汇率低于阈值!"
-        body = f"卖出价: {rate_info['sell_rate']}\n阈值: {threshold}\n时间: {rate_info['fetch_time']}"
+        body = (
+            f"卖出价: {rate_info['sell_rate']}\n"
+            f"阈值: {threshold}\n"
+            f"时间: {rate_info['fetch_time']}"
+        )
 
-        url = f"{bark_url}/{bark_device_key}"
+        # 防止 URL 多余斜杠
+        url = f"{bark_url.rstrip('/')}/{bark_device_key}"
+
         payload = {
             "title": title,
             "body": body,
             "sound": "alarm",
             "group": "汇率提醒",
             "icon": "https://www.boc.cn/favicon.ico",
-            "url": "calshow://",
         }
-        resp = requests.post(url, json=payload, timeout=10)
+
+        resp = requests.post(
+            url,
+            json=payload,
+            timeout=10
+        )
+
         result = resp.json()
+
         if result.get("code") == 200:
+            print("Bark推送成功")
             return True
+
         print(f"Bark response: {result}", file=sys.stderr)
         return False
+
     except Exception as e:
         print(f"Bark推送失败: {e}", file=sys.stderr)
         return False
@@ -304,7 +321,7 @@ def send_wxpusher(rate_info, threshold, token, uids_str):
 
 
 def push_notifications(rate_info, threshold):
-    bark_url = os.getenv("BARK_URL", "https://api.day.app")
+    bark_url = os.getenv("BARK_URL") or "https://api.day.app"
     bark_device_key = os.getenv("BARK_DEVICE_KEY", "")
     pushdeer_key = os.getenv("PUSHDEER_KEY", "")
     serverchan_key = os.getenv("SERVERCHAN_SENDKEY", "")
