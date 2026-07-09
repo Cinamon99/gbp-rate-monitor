@@ -4,8 +4,9 @@ import sys
 import json
 import requests
 from datetime import datetime, timedelta
+from urllib.parse import quote
 from bs4 import BeautifulSoup
-from icalendar import Calendar, Event
+from icalendar import Calendar, Event, Timezone, TimezoneStandard
 import pytz
 from dotenv import load_dotenv
 import matplotlib
@@ -21,6 +22,7 @@ DATA_FILE = "rate_data.json"
 ICS_FILE = "gbp_alert.ics"
 CHARTS_DIR = "charts"
 TIMEZONE = pytz.timezone("Asia/Shanghai")
+UTC = pytz.UTC
 
 os.makedirs(CHARTS_DIR, exist_ok=True)
 
@@ -30,6 +32,20 @@ plt.rcParams["font.sans-serif"] = [
     "DejaVu Sans"
 ]
 plt.rcParams["axes.unicode_minus"] = False
+
+
+def create_vtimezone():
+    tzc = Timezone()
+    tzc.add("tzid", "Asia/Shanghai")
+    tzc.add("x-lic-location", "Asia/Shanghai")
+
+    tzs = TimezoneStandard()
+    tzs.add("dtstart", datetime(1970, 1, 1, 0, 0, 0))
+    tzs.add("tzoffsetfrom", timedelta(hours=8))
+    tzs.add("tzoffsetto", timedelta(hours=8))
+    tzs.add("tzname", "CST")
+    tzc.add_component(tzs)
+    return tzc
 
 
 def is_workday():
@@ -122,39 +138,41 @@ def load_or_create_calendar():
             pass
 
     cal = Calendar()
-    cal.add("prodid", "-//GBP Rate Alert//mxm.dk//")
+    cal.add("prodid", "-//GBP Rate Alert//EN")
     cal.add("version", "2.0")
     cal.add("calscale", "GREGORIAN")
-    cal.add("method", "PUBLISH")
-    cal.add("x-wr-calname", "英镑汇率提醒")
+    cal.add("x-wr-calname", "GBP Rate Alerts")
     cal.add("x-wr-timezone", "Asia/Shanghai")
     cal.add("x-published-ttl", "PT10M")
+    cal.add_component(create_vtimezone())
     return cal
 
 
 def add_event_to_calendar(cal, rate_info, threshold):
     now = datetime.now(TIMEZONE)
-    event_uid = f"gbp-alert-{now.strftime('%Y%m%d%H%M%S')}@github-actions"
+    event_uid = f"gbp-alert-{now.strftime('%Y%m%d%H%M%S')}@gbp-monitor"
 
     event = Event()
-    event.add("dtstamp", now)
+    event.add("dtstamp", now.astimezone(UTC))
     event.add("uid", event_uid)
-    event.add("summary", f"💰 英镑卖出价: {rate_info['sell_rate']} (低于阈值 {threshold})")
+    event.add("summary", f"GBP Sell Rate: {rate_info['sell_rate']} (Below {threshold})")
 
     description = (
-        f"货币: {rate_info['currency_name']}\n"
-        f"现汇卖出价: {rate_info['sell_rate']}\n"
-        f"中行发布时间: {rate_info['pub_time']}\n"
-        f"监测时间: {rate_info['fetch_time']}\n"
-        f"设定阈值: {threshold}\n"
-        f"建议: 可以考虑购汇！"
+        f"Currency: GBP\n"
+        f"Sell Rate: {rate_info['sell_rate']}\n"
+        f"BOC Published: {rate_info['pub_time']}\n"
+        f"Check Time: {rate_info['fetch_time']}\n"
+        f"Threshold: {threshold}\n"
+        f"Status: Below threshold - consider buying!"
     )
     event.add("description", description)
     event.add("dtstart", now)
     event.add("dtend", now + timedelta(minutes=15))
-    event.add("priority", 1)
+    event.add("priority", 5)
     event.add("status", "CONFIRMED")
     event.add("transp", "OPAQUE")
+    event.add("created", now.astimezone(UTC))
+    event.add("last-modified", now.astimezone(UTC))
 
     cal.add_component(event)
 
@@ -170,15 +188,22 @@ def send_bark(rate_info, threshold, bark_url, bark_device_key):
     try:
         title = "💰 英镑汇率低于阈值!"
         body = f"卖出价: {rate_info['sell_rate']}\n阈值: {threshold}\n时间: {rate_info['fetch_time']}"
-        url = f"{bark_url}/{bark_device_key}/{title}/{body}"
-        params = {
+
+        url = f"{bark_url}/{bark_device_key}"
+        payload = {
+            "title": title,
+            "body": body,
             "sound": "alarm",
             "group": "汇率提醒",
             "icon": "https://www.boc.cn/favicon.ico",
             "url": "calshow://",
         }
-        resp = requests.get(url, params=params, timeout=10)
-        return resp.status_code == 200
+        resp = requests.post(url, json=payload, timeout=10)
+        result = resp.json()
+        if result.get("code") == 200:
+            return True
+        print(f"Bark response: {result}", file=sys.stderr)
+        return False
     except Exception as e:
         print(f"Bark推送失败: {e}", file=sys.stderr)
         return False
@@ -198,7 +223,8 @@ def send_pushdeer(rate_info, threshold, pushdeer_key):
             "type": "text",
         }
         resp = requests.post(url, data=data, timeout=10)
-        return resp.status_code == 200
+        result = resp.json()
+        return result.get("code") == 0
     except Exception as e:
         print(f"PushDeer推送失败: {e}", file=sys.stderr)
         return False
@@ -213,7 +239,8 @@ def send_serverchan(rate_info, threshold, sendkey):
         url = f"https://sctapi.ftqq.com/{sendkey}.send"
         data = {"title": title, "desp": desp}
         resp = requests.post(url, data=data, timeout=10)
-        return resp.status_code == 200
+        result = resp.json()
+        return result.get("code") == 0
     except Exception as e:
         print(f"Server酱推送失败: {e}", file=sys.stderr)
         return False
@@ -239,7 +266,8 @@ def send_telegram(rate_info, threshold, bot_token, chat_id):
             "disable_web_page_preview": True,
         }
         resp = requests.post(url, data=data, timeout=10)
-        return resp.status_code == 200
+        result = resp.json()
+        return result.get("ok") == True
     except Exception as e:
         print(f"Telegram推送失败: {e}", file=sys.stderr)
         return False
@@ -268,7 +296,8 @@ def send_wxpusher(rate_info, threshold, token, uids_str):
             "uids": uids,
         }
         resp = requests.post(url, json=data, timeout=10)
-        return resp.status_code == 200
+        result = resp.json()
+        return result.get("code") == 1000
     except Exception as e:
         print(f"WxPusher推送失败: {e}", file=sys.stderr)
         return False
@@ -292,9 +321,19 @@ def push_notifications(rate_info, threshold):
     results["wxpusher"] = send_wxpusher(rate_info, threshold, wxpusher_token, wxpusher_uids)
 
     success = [k for k, v in results.items() if v]
-    fail = [k for k, v in results.items() if not v and k in ["bark", "pushdeer", "serverchan", "telegram", "wxpusher"] and any([
-        bark_device_key, pushdeer_key, serverchan_key, tg_token, wxpusher_token
-    ])]
+    configured = []
+    if bark_device_key:
+        configured.append("bark")
+    if pushdeer_key:
+        configured.append("pushdeer")
+    if serverchan_key:
+        configured.append("serverchan")
+    if tg_token:
+        configured.append("telegram")
+    if wxpusher_token:
+        configured.append("wxpusher")
+    fail = [k for k in configured if not results.get(k)]
+
     if success:
         print(f"推送成功: {', '.join(success)}")
     if fail:
@@ -329,9 +368,9 @@ def generate_charts(data):
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot(d_ts, d_rates, "b-", linewidth=1.5, marker="o", markersize=2)
         ax.fill_between(d_ts, d_rates, alpha=0.1, color="blue")
-        ax.set_title("GBP/CNY - 24小时趋势", fontsize=14, fontweight="bold")
-        ax.set_ylabel("卖出价 (100英镑兑人民币)")
-        ax.set_xlabel("时间")
+        ax.set_title("GBP/CNY - Last 24 Hours", fontsize=14, fontweight="bold")
+        ax.set_ylabel("Sell Rate (100 GBP to CNY)")
+        ax.set_xlabel("Time")
         ax.grid(True, alpha=0.3)
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d %H:%M", tz=TIMEZONE))
         plt.xticks(rotation=45)
@@ -357,11 +396,11 @@ def generate_charts(data):
         day_low = [min(daily_agg[d]["rates"]) for d in days]
 
         fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(day_ts, day_avg, "b-", linewidth=2, marker="o", label="均价", markersize=4)
-        ax.fill_between(day_ts, day_low, day_high, alpha=0.15, color="blue", label="区间")
-        ax.set_title("GBP/CNY - 7天趋势", fontsize=14, fontweight="bold")
-        ax.set_ylabel("卖出价 (100英镑兑人民币)")
-        ax.set_xlabel("日期")
+        ax.plot(day_ts, day_avg, "b-", linewidth=2, marker="o", label="Avg", markersize=4)
+        ax.fill_between(day_ts, day_low, day_high, alpha=0.15, color="blue", label="Range")
+        ax.set_title("GBP/CNY - Last 7 Days", fontsize=14, fontweight="bold")
+        ax.set_ylabel("Sell Rate (100 GBP to CNY)")
+        ax.set_xlabel("Date")
         ax.grid(True, alpha=0.3)
         ax.legend()
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d", tz=TIMEZONE))
@@ -388,11 +427,11 @@ def generate_charts(data):
         day_low = [min(daily_agg[d]["rates"]) for d in days]
 
         fig, ax = plt.subplots(figsize=(12, 5))
-        ax.plot(day_ts, day_avg, "g-", linewidth=2, marker="o", label="均价", markersize=3)
-        ax.fill_between(day_ts, day_low, day_high, alpha=0.15, color="green", label="区间")
-        ax.set_title("GBP/CNY - 30天趋势", fontsize=14, fontweight="bold")
-        ax.set_ylabel("卖出价 (100英镑兑人民币)")
-        ax.set_xlabel("日期")
+        ax.plot(day_ts, day_avg, "g-", linewidth=2, marker="o", label="Avg", markersize=3)
+        ax.fill_between(day_ts, day_low, day_high, alpha=0.15, color="green", label="Range")
+        ax.set_title("GBP/CNY - Last 30 Days", fontsize=14, fontweight="bold")
+        ax.set_ylabel("Sell Rate (100 GBP to CNY)")
+        ax.set_xlabel("Date")
         ax.grid(True, alpha=0.3)
         ax.legend()
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d", tz=TIMEZONE))
@@ -417,11 +456,11 @@ def generate_charts(data):
         day_low = [min(all_daily_agg[d]["rates"]) for d in days]
 
         fig, ax = plt.subplots(figsize=(14, 5))
-        ax.plot(day_ts, day_avg, "purple", linewidth=2, marker="o", label="均价", markersize=3)
-        ax.fill_between(day_ts, day_low, day_high, alpha=0.12, color="purple", label="区间")
-        ax.set_title("GBP/CNY - 历史趋势", fontsize=14, fontweight="bold")
-        ax.set_ylabel("卖出价 (100英镑兑人民币)")
-        ax.set_xlabel("日期")
+        ax.plot(day_ts, day_avg, "purple", linewidth=2, marker="o", label="Avg", markersize=3)
+        ax.fill_between(day_ts, day_low, day_high, alpha=0.12, color="purple", label="Range")
+        ax.set_title("GBP/CNY - Historical Trend", fontsize=14, fontweight="bold")
+        ax.set_ylabel("Sell Rate (100 GBP to CNY)")
+        ax.set_xlabel("Date")
         ax.grid(True, alpha=0.3)
         ax.legend()
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d", tz=TIMEZONE))
@@ -463,8 +502,7 @@ def cleanup_old_history(data):
 def main():
     if not is_workday():
         today = datetime.now(TIMEZONE).strftime("%Y-%m-%d")
-        weekday = datetime.now(TIMEZONE).strftime("%A")
-        print(f"今天是 {today} {weekday}，非工作日，跳过监测。")
+        print(f"Today is weekend/non-workday, skipping.")
         return
 
     threshold_str = os.getenv("THRESHOLD_PRICE", "920")
@@ -472,21 +510,21 @@ def main():
         threshold = float(threshold_str)
     except ValueError:
         threshold = 920.0
-        print(f"阈值设置无效，使用默认值: {threshold}", file=sys.stderr)
+        print(f"Invalid threshold, using default: {threshold}", file=sys.stderr)
 
-    print(f"当前监测阈值: {threshold}")
-    print(f"正在获取中国银行英镑卖出价...")
+    print(f"Monitoring threshold: {threshold}")
+    print(f"Fetching BOC GBP sell rate...")
 
     rate_info = get_boc_gbp_rate()
     if not rate_info:
-        print("未能获取到英镑汇率数据")
+        print("Failed to fetch GBP rate")
         sys.exit(1)
 
-    print(f"获取成功!")
-    print(f"  货币: {rate_info['currency_name']}")
-    print(f"  现汇卖出价: {rate_info['sell_rate']}")
-    print(f"  发布时间: {rate_info['pub_time']}")
-    print(f"  抓取时间: {rate_info['fetch_time']}")
+    print(f"Success!")
+    print(f"  Currency: {rate_info['currency_name']}")
+    print(f"  Sell Rate: {rate_info['sell_rate']}")
+    print(f"  Published: {rate_info['pub_time']}")
+    print(f"  Fetch Time: {rate_info['fetch_time']}")
 
     update_latest_file(rate_info, threshold)
 
@@ -494,19 +532,19 @@ def main():
     data["history"].append(rate_info)
     data = cleanup_old_history(data)
 
-    print(f"正在生成趋势图...")
+    print(f"Generating charts...")
     generate_charts(data)
 
     if rate_info["sell_rate"] < threshold:
-        print(f"⚠️  当前价格 {rate_info['sell_rate']} 低于阈值 {threshold}!")
+        print(f"ALERT: Current rate {rate_info['sell_rate']} is below threshold {threshold}!")
 
         if should_alert(data, rate_info["sell_rate"], threshold):
-            print("正在添加日历事件...")
+            print("Adding calendar event...")
             cal = load_or_create_calendar()
             ics_file = add_event_to_calendar(cal, rate_info, threshold)
-            print(f"日历事件已更新: {ics_file}")
+            print(f"Calendar updated: {ics_file}")
 
-            print("正在发送推送通知...")
+            print("Sending push notifications...")
             push_notifications(rate_info, threshold)
 
             data["last_alert_rate"] = rate_info["sell_rate"]
@@ -518,12 +556,12 @@ def main():
                     "threshold": threshold,
                 }
             )
-            print("提醒已发送!")
+            print("Alert sent!")
         else:
             last_rate = data.get("last_alert_rate", threshold)
-            print(f"当前价格 {rate_info['sell_rate']} 未低于上次提醒价 {last_rate}，跳过重复提醒。")
+            print(f"Current rate {rate_info['sell_rate']} not lower than last alert rate {last_rate}, skipping.")
     else:
-        print(f"当前价格 {rate_info['sell_rate']} 高于阈值 {threshold}，无需提醒。")
+        print(f"Current rate {rate_info['sell_rate']} is above threshold {threshold}, no alert needed.")
         data["last_alert_rate"] = None
 
     save_data(data)

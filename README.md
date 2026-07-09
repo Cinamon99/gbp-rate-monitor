@@ -121,19 +121,28 @@ https://raw.githubusercontent.com/你的用户名/你的仓库名/main/charts/da
 
 ## 手动运行
 
-本地测试运行：
+本地测试运行（macOS）：
 
 ```bash
-pip install -r requirements.txt
-THRESHOLD_PRICE=920 python monitor.py
+pip3 install -r requirements.txt
+THRESHOLD_PRICE=920 python3 monitor.py
 ```
 
-或者复制 `.env.example` 为 `.env`，修改配置后运行：
+或者使用 `python3 -m pip` 安装（如果 pip3 命令找不到）：
+
+```bash
+python3 -m pip install -r requirements.txt
+THRESHOLD_PRICE=920 python3 monitor.py
+```
+
+复制 `.env.example` 为 `.env`，修改配置后可直接运行：
 
 ```bash
 cp .env.example .env
-python monitor.py
+python3 monitor.py
 ```
+
+**注意**：在GitHub Actions上运行时无需手动安装，workflow会自动处理。
 
 ## 文件说明
 
