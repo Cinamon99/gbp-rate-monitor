@@ -1,8 +1,8 @@
 {
   "current_rate": 902.96,
   "threshold": 1000.0,
-  "pub_time": "02:52:49",
-  "fetch_time": "2026-07-28 04:54:06",
+  "pub_time": "05:30:00",
+  "fetch_time": "2026-07-28 05:55:18",
   "is_below_threshold": true,
-  "updated_at": "2026-07-28T04:54:06.384968+08:00"
+  "updated_at": "2026-07-28T05:55:18.732242+08:00"
 }
