@@ -1,8 +1,8 @@
 {
-  "current_rate": 902.65,
+  "current_rate": 903.02,
   "threshold": 1000.0,
-  "pub_time": "21:18:49",
-  "fetch_time": "2026-07-29 21:22:35",
+  "pub_time": "23:23:50",
+  "fetch_time": "2026-07-29 23:24:53",
   "is_below_threshold": true,
-  "updated_at": "2026-07-29T21:22:35.954653+08:00"
+  "updated_at": "2026-07-29T23:24:53.668095+08:00"
 }
