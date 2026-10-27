@@ -3,24 +3,6 @@
     {
       "currency": "GBP",
       "currency_name": "英镑",
-      "sell_rate": 903.39,
-      "pub_time": "17:23:48",
-      "timestamp": "2026-07-29T17:29:16.192561+08:00",
-      "fetch_time": "2026-07-29 17:29:16",
-      "date": "2026-07-29"
-    },
-    {
-      "currency": "GBP",
-      "currency_name": "英镑",
-      "sell_rate": 903.37,
-      "pub_time": "19:38:49",
-      "timestamp": "2026-07-29T19:40:52.217065+08:00",
-      "fetch_time": "2026-07-29 19:40:52",
-      "date": "2026-07-29"
-    },
-    {
-      "currency": "GBP",
-      "currency_name": "英镑",
       "sell_rate": 902.65,
       "pub_time": "21:18:49",
       "timestamp": "2026-07-29T21:22:35.954224+08:00",
@@ -7207,6 +7189,15 @@
       "pub_time": "14:48:38",
       "timestamp": "2026-10-27T14:51:22.732217+08:00",
       "fetch_time": "2026-10-27 14:51:22",
+      "date": "2026-10-27"
+    },
+    {
+      "currency": "GBP",
+      "currency_name": "英镑",
+      "sell_rate": 892.31,
+      "pub_time": "20:43:40",
+      "timestamp": "2026-10-27T20:46:22.147639+08:00",
+      "fetch_time": "2026-10-27 20:46:22",
       "date": "2026-10-27"
     }
   ],
