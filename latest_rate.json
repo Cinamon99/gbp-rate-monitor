@@ -1,8 +1,8 @@
 {
-  "current_rate": 904.11,
+  "current_rate": 903.02,
   "threshold": 1000.0,
-  "pub_time": "17:39:24",
-  "fetch_time": "2026-11-04 17:40:57",
+  "pub_time": "01:29:26",
+  "fetch_time": "2026-11-05 01:30:52",
   "is_below_threshold": true,
-  "updated_at": "2026-11-04T17:40:57.804325+08:00"
+  "updated_at": "2026-11-05T01:30:52.967303+08:00"
 }
