@@ -3,60 +3,6 @@
     {
       "currency": "GBP",
       "currency_name": "英镑",
-      "sell_rate": 914.64,
-      "pub_time": "12:20:07",
-      "timestamp": "2026-08-12T12:25:33.125768+08:00",
-      "fetch_time": "2026-08-12 12:25:33",
-      "date": "2026-08-12"
-    },
-    {
-      "currency": "GBP",
-      "currency_name": "英镑",
-      "sell_rate": 914.71,
-      "pub_time": "13:50:07",
-      "timestamp": "2026-08-12T13:53:00.013737+08:00",
-      "fetch_time": "2026-08-12 13:53:00",
-      "date": "2026-08-12"
-    },
-    {
-      "currency": "GBP",
-      "currency_name": "英镑",
-      "sell_rate": 914.76,
-      "pub_time": "14:55:07",
-      "timestamp": "2026-08-12T15:00:28.106474+08:00",
-      "fetch_time": "2026-08-12 15:00:28",
-      "date": "2026-08-12"
-    },
-    {
-      "currency": "GBP",
-      "currency_name": "英镑",
-      "sell_rate": 915.03,
-      "pub_time": "16:20:08",
-      "timestamp": "2026-08-12T16:22:25.860075+08:00",
-      "fetch_time": "2026-08-12 16:22:25",
-      "date": "2026-08-12"
-    },
-    {
-      "currency": "GBP",
-      "currency_name": "英镑",
-      "sell_rate": 915.27,
-      "pub_time": "17:30:08",
-      "timestamp": "2026-08-12T17:35:23.751526+08:00",
-      "fetch_time": "2026-08-12 17:35:23",
-      "date": "2026-08-12"
-    },
-    {
-      "currency": "GBP",
-      "currency_name": "英镑",
-      "sell_rate": 915.49,
-      "pub_time": "18:35:08",
-      "timestamp": "2026-08-12T18:39:17.241649+08:00",
-      "fetch_time": "2026-08-12 18:39:17",
-      "date": "2026-08-12"
-    },
-    {
-      "currency": "GBP",
-      "currency_name": "英镑",
       "sell_rate": 915.3,
       "pub_time": "19:25:08",
       "timestamp": "2026-08-12T19:27:58.463028+08:00",
@@ -6145,6 +6091,15 @@
       "pub_time": "10:54:57",
       "timestamp": "2026-11-10T10:57:59.844046+08:00",
       "fetch_time": "2026-11-10 10:57:59",
+      "date": "2026-11-10"
+    },
+    {
+      "currency": "GBP",
+      "currency_name": "英镑",
+      "sell_rate": 899.53,
+      "pub_time": "18:44:59",
+      "timestamp": "2026-11-10T18:46:47.436986+08:00",
+      "fetch_time": "2026-11-10 18:46:47",
       "date": "2026-11-10"
     }
   ],
