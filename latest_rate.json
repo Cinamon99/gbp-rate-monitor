@@ -1,8 +1,8 @@
 {
-  "current_rate": 884.03,
+  "current_rate": 880.28,
   "threshold": 1000.0,
-  "pub_time": "09:35:42",
-  "fetch_time": "2026-11-18 09:41:29",
+  "pub_time": "17:05:44",
+  "fetch_time": "2026-11-18 17:08:01",
   "is_below_threshold": true,
-  "updated_at": "2026-11-18T09:41:29.005783+08:00"
+  "updated_at": "2026-11-18T17:08:01.014062+08:00"
 }
